@@ -2,7 +2,7 @@ from itertools import combinations, chain
 
 # For generating C_k if a list of frequent itemsets are given
 # Given elements of length k, generate candidates of length k+1
-def generate_candidates_set(Lk: list[tuple[int]], k: int) -> list[tuple[int]]:
+def generate_candidates_set(Lk: list[tuple[int]]) -> list[tuple[int]]:
     candidates = set()
     for i, c1 in enumerate(Lk[:-1]):
         for c2 in Lk[i+1:]:
