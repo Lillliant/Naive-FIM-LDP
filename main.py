@@ -22,28 +22,25 @@ def write_output(output_path: str, algorithm: str, frequent_itemset: list[tuple[
         f.write("End time: " + str(end_time) + '\n')
         f.write("Total time: " + str(end_time - start_time) + '\n')
 
-def frequent_mining(output_path: str, data_path: str, min_support: int):
+def frequent_mining(output_path: str, data_path: str, algorithm: str, min_support: int):
     # Read the input data
     print("Reading input data...")
     data = process_data(data_path)
 
     # Processing for Apriori
-    print("Processing with Apriori...")
-    a_stime = datetime.datetime.now()
-    print("Start time: ", a_stime)
-    frequent_itemset = apriori(data, min_support)
-    a_etime = datetime.datetime.now()
-    print("End time: ", a_etime)
-    write_output(output_path, 'apriori', frequent_itemset, a_stime, a_etime)
-
-    # Processing for Eclat
-    print("Processing with Eclat...")
-    e_stime = datetime.datetime.now()
-    print("Start time: ", e_stime)
-    frequent_itemset = eclat(data, min_support)
-    e_etime = datetime.datetime.now()
-    print("End time: ", e_etime)
-    write_output(output_path, 'eclat', frequent_itemset, e_stime, e_etime)
+    print(f"Processing with {algorithm.title()}...")
+    stime = datetime.datetime.now()
+    print("Start time: ", stime)
+    match algorithm:
+        case 'apriori':
+            frequent_itemset = apriori(data, min_support)
+        case 'eclat':
+            frequent_itemset = eclat(data, min_support)
+        case _:
+            raise ValueError("Invalid algorithm specified.")
+    etime = datetime.datetime.now()
+    print("End time: ", etime)
+    write_output(output_path, algorithm, frequent_itemset, stime, etime)
 
 if __name__ == '__main__':
     # Set the output path and minimum support
@@ -51,4 +48,5 @@ if __name__ == '__main__':
     output_path = f'./output/original_9976_s{min_support}/'
     data_path = './data/t25i10d10k/t25i10d10k.txt'
     
-    frequent_mining(output_path, data_path, min_support)
+    frequent_mining(output_path, data_path, 'apriori', min_support)
+    frequent_mining(output_path, data_path, 'eclat', min_support)
