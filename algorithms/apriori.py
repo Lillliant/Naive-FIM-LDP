@@ -22,14 +22,14 @@ def prune_candidates_set(candidates: list[tuple[int]], Lk: list[tuple[int]]) -> 
     return candidates
 
 # Generate L_k+1 based on C_k
-def next_frequent_itemset(data: list[tuple[int]], C_k: list[tuple[int]], min_support: int) -> list[tuple[int]]:
+def next_frequent_itemset(data: list[tuple[int]], C_k: list[tuple[int]], min_support: int) -> list[tuple[tuple[int], int]]:
     support_set = count_support(data, C_k) # count the support of each candidate within the transactions
     #print("support_set: ", support_set)
     Lk_1 = [(k, v) for (k,v) in support_set.items() if v >= min_support]
     return Lk_1
 
 # Count of support of each candidate within the transactions
-def count_support(data: list[tuple[int]], candidates_set: list[tuple[int]]) -> dict[tuple, int]:
+def count_support(data: list[tuple[int]], candidates_set: list[tuple[int]]) -> dict[tuple[int], int]:
     support_set = {candidate: 0 for candidate in candidates_set}
     for transaction in data:
         for candidate in candidates_set:
@@ -38,7 +38,7 @@ def count_support(data: list[tuple[int]], candidates_set: list[tuple[int]]) -> d
     return support_set
 
 # Main Apriori algorithm
-def apriori(data: list[list[int]], min_support: int) -> list[tuple[int]]:
+def apriori(data: list[list[int]], min_support: int) -> list[tuple[tuple[int], int]]:
     frequent_itemsets = []
     k = 1
     C_k = [tuple(e) for e in combinations(set(chain(*data)), 1)] # Generate C1 = all items
@@ -48,8 +48,11 @@ def apriori(data: list[list[int]], min_support: int) -> list[tuple[int]]:
     #print("L1: ", L_k)
     while L_k: # while Lk is not empty
         # generate candidate sets from Lk
+        print("Iteration: ", k)
         C_k = generate_candidates_set(L_k) # Generate Ck+1
+        print(f"C{k+1} generated.")
         L_k = next_frequent_itemset(data, C_k, min_support) # Generate Lk+1
+        print(f"L{k+1} generated.")
         frequent_itemsets.extend(L_k) # Add the frequent items to the itemsets
         k += 1
     

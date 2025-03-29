@@ -27,13 +27,14 @@ def next_frequent_itemset(C_k: list[tuple[int]], min_support: int) -> list[tuple
     return frequent_breadth
 
 # Main Eclat algorithm
-def eclat(data: list[list[int]], min_support: int) -> list[list[int]]:
+def eclat(data: list[list[int]], min_support: int) -> list[tuple[tuple[int], int]]:
     frequent_itemsets = []
     C_1 = generate_item_tid(data) # generate the item-transaction table
     L_1 = [(k, v) for k, v in C_1.items() if len(v) >= min_support] # generate the frequent items
     frequent_itemsets.extend([(k, len(v)) for k, v in L_1]) # add the frequent items to the itemsets
 
     for i, (c, tid) in enumerate(L_1[:-1]):
+        print("Iterating for: ", c)
         C_k = next_breadth_candidates((c, tid), L_1[i+1:], min_support)
         frequent_itemsets.extend([(k, len(v)) for k, v in C_k])
         while C_k: # while Ck is not empty
