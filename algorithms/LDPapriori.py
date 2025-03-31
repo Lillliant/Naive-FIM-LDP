@@ -1,7 +1,7 @@
 from itertools import combinations, chain
 import math
 
-def calculate_true_frequency(frequency: int, N: int, K: int, P: int, k: int) -> int:
+def calculate_true_frequency(frequency: int, N: int, K: int, P: float, k: int) -> int:
     prob_false_positive = (1-P)/K
     true_frequency = (frequency - math.pow(prob_false_positive, k) * N) / (math.pow(P, k) - math.pow(prob_false_positive, k))
     return true_frequency
@@ -28,7 +28,7 @@ def prune_candidates_set(candidates: list[tuple[int]], Lk: list[tuple[int]]) -> 
     return candidates
 
 # Generate L_k+1 based on C_k
-def next_frequent_itemset(data: list[tuple[int]], C_k: list[tuple[int]], min_support: int, N: int, K: int, P: int, k: int) -> list[tuple[tuple[int], int]]:
+def next_frequent_itemset(data: list[tuple[int]], C_k: list[tuple[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[tuple[int], int]]:
     support_set = count_support(data, C_k) # count the support of each candidate within the transactions
     #print("support_set: ", support_set)
     Lk_1 = [(l, s) for (l, s) in support_set.items() if calculate_true_frequency(s, N, K, P, k) >= min_support]
@@ -44,7 +44,7 @@ def count_support(data: list[tuple[int]], candidates_set: list[tuple[int]]) -> d
     return support_set
 
 # Main Apriori algorithm
-def LDPapriori(data: list[list[int]], min_support: int, N: int, K: int, P: int) -> list[tuple[tuple[int], int]]:
+def LDPapriori(data: list[list[int]], min_support: int, N: int, K: int, P: float) -> list[tuple[tuple[int], int]]:
     frequent_itemsets = []
     k = 1
     C_k = [tuple(e) for e in combinations(set(chain(*data)), 1)] # Generate C1 = all items

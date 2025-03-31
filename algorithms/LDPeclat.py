@@ -1,9 +1,13 @@
 
 import math
 
-def calculate_true_frequency(frequency: int, N: int, K: int, P: int, k: int) -> int:
+def calculate_true_frequency(frequency: int, N: int, K: int, P: float, k: int) -> int:
     prob_false_positive = (1-P)/K
-    true_frequency = (frequency - math.pow(prob_false_positive, k) * N) / (math.pow(P, k) - math.pow(prob_false_positive, k))
+    #print(f'P: {P}')
+    #print(f"Numerator: {frequency - math.pow(prob_false_positive, k) * N}")
+    #print(f"Denominator: {math.pow(P, k) - math.pow(prob_false_positive, k)}")
+    true_frequency = (frequency - math.pow(prob_false_positive, k) * N) / abs((math.pow(P, k) - math.pow(prob_false_positive, k)))
+    #print(f"True frequency: {true_frequency}")
     return true_frequency
 
 # convert the transaction data into vertical format
@@ -19,7 +23,7 @@ def generate_item_tid(data: list[list[int]]) -> dict[tuple[int], set[int]]:
                 candidate_transaction_set[(item,)].add(idx)
     return candidate_transaction_set
 
-def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinations: list[tuple[int], set[int]], min_support: int, N: int, K: int, P: int, k: int) -> list[tuple[int]]:
+def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinations: list[tuple[int], set[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[int]]:
     frequent_itemsets = []
     for i, tid in combinations:
         candidate = tuple(set(init_element[0]).union(set(i)))
@@ -28,7 +32,7 @@ def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinati
             frequent_itemsets.append((candidate, c_tid))
     return frequent_itemsets
 
-def next_frequent_itemset(C_k: list[tuple[int]], min_support: int, N: int, K: int, P: int, k: int) -> list[tuple[int]]:
+def next_frequent_itemset(C_k: list[tuple[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[int]]:
     candidate_breadth = []
     for i, c in enumerate(C_k[:-1]):
         candidate_breadth.extend(next_breadth_candidates(c, C_k[i+1:], min_support, N, K, P, k))
@@ -40,9 +44,10 @@ def next_frequent_itemset(C_k: list[tuple[int]], min_support: int, N: int, K: in
     return frequent_breadth
 
 # Main Eclat algorithm
-def LDPeclat(data: list[list[int]], min_support: int, N: int, K: int, P: int) -> list[tuple[tuple[int], int]]:
+def LDPeclat(data: list[list[int]], min_support: int, N: int, K: int, P: float) -> list[tuple[tuple[int], int]]:
     frequent_itemsets = []
     C_1 = generate_item_tid(data) # generate the item-transaction table
+    #print("C_1: ", C_1)
     L_1 = [(c, t) for c, t in C_1.items() if calculate_true_frequency(len(t), N, K, P, 1) >= min_support] # generate the frequent items
     frequent_itemsets.extend([(k, len(v)) for k, v in L_1]) # add the frequent items to the itemsets
 
@@ -52,6 +57,7 @@ def LDPeclat(data: list[list[int]], min_support: int, N: int, K: int, P: int) ->
         frequent_itemsets.extend([(k, len(v)) for k, v in C_k])
         k = 3
         while C_k: # while Ck is not empty
+            #print("Iterating for: ", C_k)
             # calculate for each breadth
             L_k = next_frequent_itemset(C_k, min_support, N, K, P, k) # generate Lk
             frequent_itemsets.extend([(k, len(v)) for k, v in L_k])
