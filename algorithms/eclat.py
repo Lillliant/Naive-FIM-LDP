@@ -21,9 +21,14 @@ def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinati
     return frequent_itemsets
 
 def next_frequent_itemset(C_k: list[tuple[int]], min_support: int) -> list[tuple[int]]:
-    frequent_breadth = []
+    candidate_breadth = []
     for i, c in enumerate(C_k[:-1]):
-        frequent_breadth.extend(next_breadth_candidates(c, C_k[i+1:], min_support))
+        candidate_breadth.extend(next_breadth_candidates(c, C_k[i+1:], min_support))
+    # remove duplicates
+    frequent_breadth = []
+    for item in candidate_breadth:
+        if item not in frequent_breadth:
+            frequent_breadth.append(item)
     return frequent_breadth
 
 # Main Eclat algorithm
@@ -46,7 +51,7 @@ def eclat(data: list[list[int]], min_support: int) -> list[tuple[tuple[int], int
 
 if __name__ == "__main__":
     import pprint
-    data = [[3, 4, 1], [2, 4, 3], [2, 1], [2, 3], [2, 1, 3, 4]]
+    data = [[3, 4, 1, 2], [2, 4, 3, 1], [2, 1, 3, 4], [2, 3, 1, 4], [2, 1, 3, 4]]
     min_support = 2
     frequent_itemset = eclat(data, min_support)
     pprint.pprint(frequent_itemset)
