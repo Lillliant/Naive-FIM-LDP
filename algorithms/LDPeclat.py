@@ -23,7 +23,7 @@ def generate_item_tid(data: list[list[int]]) -> dict[tuple[int], set[int]]:
                 candidate_transaction_set[(item,)].add(idx)
     return candidate_transaction_set
 
-def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinations: list[tuple[int], set[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[int]]:
+def next_depth_candidates(init_element: tuple[tuple[int], set[int]], combinations: list[tuple[int], set[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[int]]:
     frequent_itemsets = []
     for i, tid in combinations:
         candidate = tuple(set(init_element[0]).union(set(i)))
@@ -33,15 +33,15 @@ def next_breadth_candidates(init_element: tuple[tuple[int], set[int]], combinati
     return frequent_itemsets
 
 def next_frequent_itemset(C_k: list[tuple[int]], min_support: int, N: int, K: int, P: float, k: int) -> list[tuple[int]]:
-    candidate_breadth = []
+    candidate_depth = []
     for i, c in enumerate(C_k[:-1]):
-        candidate_breadth.extend(next_breadth_candidates(c, C_k[i+1:], min_support, N, K, P, k))
+        candidate_depth.extend(next_depth_candidates(c, C_k[i+1:], min_support, N, K, P, k))
     # remove duplicates
-    frequent_breadth = []
-    for item in candidate_breadth:
-        if item not in frequent_breadth:
-            frequent_breadth.append(item)
-    return frequent_breadth
+    frequent_depth = []
+    for item in candidate_depth:
+        if item not in frequent_depth:
+            frequent_depth.append(item)
+    return frequent_depth
 
 # Main Eclat algorithm
 def LDPeclat(data: list[list[int]], min_support: int, N: int, K: int, P: float) -> list[tuple[tuple[int], int]]:
@@ -53,12 +53,12 @@ def LDPeclat(data: list[list[int]], min_support: int, N: int, K: int, P: float) 
 
     for i, (c, tid) in enumerate(L_1[:-1]):
         print("Iterating for: ", c)
-        C_k = next_breadth_candidates((c, tid), L_1[i+1:], min_support, N, K, P, 2)
+        C_k = next_depth_candidates((c, tid), L_1[i+1:], min_support, N, K, P, 2)
         frequent_itemsets.extend([(k, len(v)) for k, v in C_k])
         k = 3
         while C_k: # while Ck is not empty
             #print("Iterating for: ", C_k)
-            # calculate for each breadth
+            # calculate for each depth 'path'd
             L_k = next_frequent_itemset(C_k, min_support, N, K, P, k) # generate Lk
             frequent_itemsets.extend([(k, len(v)) for k, v in L_k])
             C_k = L_k
