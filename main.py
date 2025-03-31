@@ -1,16 +1,14 @@
-import datetime
+import datetime, os, math, pprint, random, pickle
 from algorithms.LDPeclat import LDPeclat
 from algorithms.apriori import apriori
 from algorithms.eclat import eclat
 from algorithms.LDPapriori import LDPapriori
-import os
-import random, pickle
-import math
 from itertools import chain
+from util import *
 
 # Global variables
 MIN_SUPPORT = 20
-SIZE = None # N: Number of transactions in the dataset
+SIZE = 200 # N: Number of transactions in the dataset
 PRIVACY_BUDGET = 7
 
 def perturb_function(data: list[list[int]]) -> list[list[int]]:
@@ -38,19 +36,74 @@ def perturb_function(data: list[list[int]]) -> list[list[int]]:
         new_data.append(new_transaction)
     return new_data
 
-def evaluate(y_true: list[tuple[int]], y_pred: list[tuple[int]], algorithm1: str, algorithm2: str):
-    from sklearn.metrics import precision_score, recall_score, f1_score
-    from sklearn.metrics import accuracy_score
-    
-    print(f"Evaluating {algorithm1} and {algorithm2}...")
-    precision = precision_score(y_true, y_pred)
-    recall = recall_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred)
-    accuracy = accuracy_score(y_true, y_pred)
-    print(f"Precision: {precision}")
-    print(f"Recall: {recall}")
-    print(f"F1 Score: {f1}")
-    print(f"Accuracy: {accuracy}")
+# Metrics to Examine: F1 score, Precision, Recall, Execution time, False Positive Rate, False Negative Rate
+def eval(output_dir: str, algorithms: list[str]):
+    # Create the director to store the evaluation results
+    if not os.path.exists(f'{output_dir}/eval/'): os.makedirs(f'{output_dir}/eval/')
+    # Metrics to examine: Execution time (expressed in seconds)
+    execution_time = {a: 0 for a in algorithms}
+    for a in algorithms:
+        if os.path.exists(f'{output_dir}/{a}_time.pkl'):
+            execution_time[a] = pickle.load(open(f'{output_dir}/{a}_time.pkl', 'rb')).total_seconds()
+        else: print(f"'{output_dir}/{a}_time.pkl' not found. Skipping the algorithm...")
+
+    # Use Apriori and Eclat as the baseline for correct frequent itemset mining
+    # Either consider the support or just the frequent itemsets
+    precision = {}
+    s_precision = {}
+    recall = {}
+    s_recall = {}
+    false_positive = {}
+    false_negative = {}
+    f1 = {}
+    s_f1 = {}
+    support_deviation = {}
+    if 'apriori' in algorithms and 'ldp_apriori' in algorithms:
+        apriori_fim = pickle.load(open(f'{output_dir}/apriori_fim.pkl', 'rb'))
+        ldp_apriori_fim = pickle.load(open(f'{output_dir}/ldp_apriori_fim.pkl', 'rb'))
+        precision['ldp_apriori'] = calculate_precision(apriori_fim, ldp_apriori_fim, s=False)
+        s_precision['ldp_apriori'] = calculate_precision(apriori_fim, ldp_apriori_fim, s=True)
+        recall['ldp_apriori'] = calculate_recall(apriori_fim, ldp_apriori_fim, s=False)
+        s_recall['ldp_apriori'] = calculate_recall(apriori_fim, ldp_apriori_fim, s=True)
+        false_positive['ldp_apriori'] = calculate_fp(apriori_fim, ldp_apriori_fim)
+        false_negative['ldp_apriori'] = calculate_fn(apriori_fim, ldp_apriori_fim)
+        f1['ldp_apriori'] = calculate_f1(apriori_fim, ldp_apriori_fim, s=False)
+        s_f1['ldp_apriori'] = calculate_f1(apriori_fim, ldp_apriori_fim, s=True)
+        support_deviation['ldp_apriori'] = average_support_deviation(apriori_fim, ldp_apriori_fim)
+    if 'eclat' in algorithms and 'ldp_eclat' in algorithms:
+        eclat_fim = pickle.load(open(f'{output_dir}/eclat_fim.pkl', 'rb'))
+        ldp_eclat_fim = pickle.load(open(f'{output_dir}/ldp_eclat_fim.pkl', 'rb'))
+        precision['ldp_eclat'] = calculate_precision(eclat_fim, ldp_eclat_fim, s=False)
+        s_precision['ldp_eclat'] = calculate_precision(eclat_fim, ldp_eclat_fim, s=True)
+        recall['ldp_eclat'] = calculate_recall(eclat_fim, ldp_eclat_fim, s=False)
+        s_recall['ldp_eclat'] = calculate_recall(eclat_fim, ldp_eclat_fim, s=True)
+        false_positive['ldp_eclat'] = calculate_fp(eclat_fim, ldp_eclat_fim)
+        false_negative['ldp_eclat'] = calculate_fn(eclat_fim, ldp_eclat_fim)
+        f1['ldp_eclat'] = calculate_f1(eclat_fim, ldp_eclat_fim, s=False)
+        s_f1['ldp_eclat'] = calculate_f1(eclat_fim, ldp_eclat_fim, s=True)
+        support_deviation['ldp_eclat'] = average_support_deviation(eclat_fim, ldp_eclat_fim)
+
+    # Save the performance evaluation metrics
+    performance_metrics = {
+        'execution_time': execution_time,
+        'precision': precision,
+        's_precision': s_precision,
+        'recall': recall,
+        's_recall': s_recall,
+        'false_positive_rate': false_positive,
+        'false_negative_rate': false_negative,
+        'f1': f1,
+        's_f1': s_f1,
+        'average_support_deviation': support_deviation
+    }
+
+    print("Performance metrics:")
+    pprint.pprint(performance_metrics)
+    with open(f'{output_dir}/eval/performance_metrics.txt', 'w') as f:
+        f.write("Performance metrics:\n")
+        pprint.pprint(performance_metrics, stream=f)
+        f.close()
+    pickle.dump(performance_metrics, open(f'{output_dir}/eval/performance_metrics.pkl', 'wb'))
 
 def load_data(input_path: str, output_dir: str, size: int = None, perturb: bool = False) -> list[list[int]]:
     random.seed(0)
@@ -140,14 +193,20 @@ def frequent_mining(output_path: str, data_path: str, algorithm: str, min_suppor
     return frequent_itemset
 
 if __name__ == '__main__':
-    # Set the output path and minimum support
-    output_path = f'./output/t_{SIZE}_s{MIN_SUPPORT}_p{PRIVACY_BUDGET}'
-    data_path = './data/toy/toy1.txt' #./data/t25i10d10k/t25i10d10k.txt
-    apriori_fim = frequent_mining(output_path, data_path, 'apriori', MIN_SUPPORT)
-    eclat_fim = frequent_mining(output_path, data_path, 'eclat', MIN_SUPPORT)
-    #ldpeclat_fim = frequent_mining(output_path, data_path, 'ldp_eclat', MIN_SUPPORT)
-    #ldpapriori_fim = frequent_mining(output_path, data_path, 'ldp_apriori', MIN_SUPPORT)
+    # Set the data, output path and minimum support
+    dataset = 'toy' # 't25i10d10k' 'toy'
+    output_path = f'./output/{dataset}/t_{SIZE}_s{MIN_SUPPORT}_p{PRIVACY_BUDGET}'
+    data_path = f'./data/{dataset}/{dataset}.txt'
+    evaluate = True
+
+    # Running the algorithms
+    algorithms = ['apriori', 'eclat', 'ldp_apriori', 'ldp_eclat']
+    for a in algorithms:
+        if not os.path.exists(f'{output_path}/{a}.txt'): # Check if the output file already exists
+            print(f"Output file for {a} not found. Running the algorithm...")
+            frequent_mining(output_path, data_path, a, MIN_SUPPORT)
+        else:
+            print(f"Output file for {a} already exists. Skipping the algorithm...")
     
-    # Evaluate the results
-    #evaluate(apriori_fim, ldpapriori_fim, 'apriori', 'ldp_apriori')
-    #evaluate(eclat_fim, ldpeclat_fim, 'eclat', 'ldp_eclat')
+    # Evaluate the algorithms
+    if evaluate: eval(output_path, algorithms)
