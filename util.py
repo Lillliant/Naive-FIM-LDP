@@ -82,3 +82,11 @@ def average_support_deviation(fim_true: list[tuple[int], int], fim_pred: list[tu
         return 0
     average_deviation = total_support / total_fi
     return average_deviation
+
+def average_item_change_per_transaction(original_data: list[list[int]], perturbed_data: list[list[int]]) -> float:
+    total_changes = 0
+    for original, perturbed in zip(original_data, perturbed_data):
+        changes = len(set(original) ^ set(perturbed))
+        total_changes += changes
+    average_change = total_changes / len(original_data) if original_data else 0
+    return average_change

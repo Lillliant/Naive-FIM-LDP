@@ -7,9 +7,9 @@ from itertools import chain
 from util import *
 
 # Global variables
-MIN_SUPPORT = 20
-SIZE = 200 # N: Number of transactions in the dataset
-PRIVACY_BUDGET = 7
+MIN_SUPPORT = 900
+SIZE = 9976 # N: Number of transactions in the dataset
+PRIVACY_BUDGET = 9
 
 def perturb_function(data: list[list[int]]) -> list[list[int]]:
     random.seed(0)
@@ -40,6 +40,13 @@ def perturb_function(data: list[list[int]]) -> list[list[int]]:
 def eval(output_dir: str, algorithms: list[str]):
     # Create the director to store the evaluation results
     if not os.path.exists(f'{output_dir}/eval/'): os.makedirs(f'{output_dir}/eval/')
+
+    # Metrics to examine: Average percentage of change within each transaction
+    change_percentage = 0
+    if os.path.exists(f'{output_dir}/data.pkl') and os.path.exists(f'{output_dir}/perturbed_data.pkl'):
+        data = pickle.load(open(f'{output_dir}/data.pkl', 'rb'))
+        perturbed_data = pickle.load(open(f'{output_dir}/perturbed_data.pkl', 'rb'))
+        change_percentage = average_item_change_per_transaction(data, perturbed_data)
     # Metrics to examine: Execution time (expressed in seconds)
     execution_time = {a: 0 for a in algorithms}
     for a in algorithms:
@@ -94,7 +101,8 @@ def eval(output_dir: str, algorithms: list[str]):
         'false_negative_rate': false_negative,
         'f1': f1,
         's_f1': s_f1,
-        'average_support_deviation': support_deviation
+        'average_support_deviation': support_deviation,
+        'average_transaction_change_percentage': change_percentage
     }
 
     print("Performance metrics:")
@@ -194,7 +202,7 @@ def frequent_mining(output_path: str, data_path: str, algorithm: str, min_suppor
 
 if __name__ == '__main__':
     # Set the data, output path and minimum support
-    dataset = 'toy' # 't25i10d10k' 'toy'
+    dataset = 't25i10d10k' # 't25i10d10k' 'toy'
     output_path = f'./output/{dataset}/t_{SIZE}_s{MIN_SUPPORT}_p{PRIVACY_BUDGET}'
     data_path = f'./data/{dataset}/{dataset}.txt'
     evaluate = True
