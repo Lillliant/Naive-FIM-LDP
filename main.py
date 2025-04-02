@@ -185,6 +185,7 @@ def frequent_mining(output_path: str, data_path: str, algorithm: str, min_suppor
             print("Start time: ", stime)
             print("Number of items (K): ", K)
             print("Probability (P): ", P)
+            #frequent_itemset = apriori(data, min_support) # this is for when frequency estimation is removed
             frequent_itemset = LDPapriori(data, min_support, SIZE, K, P)
         case 'ldp_eclat':
             data = load_data(data_path, output_path, SIZE, perturb=True)
@@ -192,6 +193,7 @@ def frequent_mining(output_path: str, data_path: str, algorithm: str, min_suppor
             print("Start time: ", stime)
             print("Number of items (K): ", K)
             print("Probability (P): ", P)
+            #frequent_itemset = eclat(data, min_support) # this is for when frequency estimation is removed
             frequent_itemset = LDPeclat(data, min_support, SIZE, K, P)
         case _:
             raise ValueError("Invalid algorithm specified.")
